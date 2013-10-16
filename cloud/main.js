@@ -1,4 +1,4 @@
-var chat = require("chat.js")
+var chat = require("chat.js");
 
 exports.join = function(params, cb) {
   console.log('join from ', params.__fh.cuid);
