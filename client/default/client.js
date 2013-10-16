@@ -1,7 +1,3 @@
-$fh.ready({}, function() {
-  // Increase the request timeout to allow long polls to complete
-  $fh.fh_timeout = 60000;
-})
 
 var CONFIG = { debug: false
              , nick: "#"   // set in onConnect
@@ -475,7 +471,9 @@ function who () {
   function() {});
 }
 
-$(document).ready(function() {
+$fh.ready({}, function() {
+  // Increase the request timeout to allow long polls to complete
+  $fh.fh_timeout = 60000;
 
   //submit new messages when the user hits enter if the message isnt blank
   $("#entry").keypress(function (e) {
