@@ -2,7 +2,7 @@ var webapp = require('fh-webapp');
 var express = require('express');
 $fh = require('fh-api');
 var mainjs = require('main.js');
-var serverjs = require('./server.js');
+var serverjs = require('server.js');
 
 var app = express();
 app.use('/sys', webapp.sys(mainjs));
