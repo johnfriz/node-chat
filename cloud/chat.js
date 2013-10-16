@@ -1,6 +1,3 @@
-HOST = null; // localhost
-PORT = process.env.VCAP_APP_PORT || 8001;
-
 // when the daemon started
 var starttime = (new Date()).getTime();
 
@@ -11,10 +8,7 @@ setInterval(function () {
 }, 10*1000);
 
 
-var fu = require("./fu"),
-    sys = require("sys"),
-    url = require("url"),
-    qs = require("querystring");
+var sys = require("sys");
 
 var MESSAGE_BACKLOG = 200,
     SESSION_TIMEOUT = 60 * 1000;
@@ -120,81 +114,61 @@ setInterval(function () {
   }
 }, 1000);
 
-fu.listen(Number(process.env.PORT || PORT), HOST);
+exports.join = function(params, cb) {
+  var nick = params.nick;
+  if (nick == null || nick.length == 0) {
+    return cb("Bad Nick");
+  }
+  var session = createSession(nick);
+  if (session == null) {
+    return cb("Nick in use");
+  }
 
-fu.get("/", fu.staticHandler("index.html"));
-fu.get("/style.css", fu.staticHandler("style.css"));
-fu.get("/client.js", fu.staticHandler("client.js"));
-fu.get("/jquery-1.2.6.min.js", fu.staticHandler("jquery-1.2.6.min.js"));
+  //sys.puts("connection: " + nick + "@" + res.connection.remoteAddress);
 
+  channel.appendMessage(session.nick, "join");
+  cb(null, { id: session.id
+    , nick: session.nick
+    , rss: mem.rss
+    , starttime: starttime
+  });
+};
 
-fu.get("/who", function (req, res) {
+exports.who = function(params, cb) {
   var nicks = [];
   for (var id in sessions) {
     if (!sessions.hasOwnProperty(id)) continue;
     var session = sessions[id];
     nicks.push(session.nick);
   }
-  res.simpleJSON(200, { nicks: nicks
-                      , rss: mem.rss
-                      });
-});
+  return cb(null, {
+    nicks: nicks,
+    rss: mem.rss
+  });
+};
 
-fu.get("/join", function (req, res) {
-  var nick = qs.parse(url.parse(req.url).query).nick;
-  if (nick == null || nick.length == 0) {
-    res.simpleJSON(400, {error: "Bad nick."});
-    return;
+exports.recv = function(params, cb) {
+  if (!params.since) {
+    return cb("Must supply since parameter");
   }
-  var session = createSession(nick);
-  if (session == null) {
-    res.simpleJSON(400, {error: "Nick in use"});
-    return;
-  }
-
-  //sys.puts("connection: " + nick + "@" + res.connection.remoteAddress);
-
-  channel.appendMessage(session.nick, "join");
-  res.simpleJSON(200, { id: session.id
-                      , nick: session.nick
-                      , rss: mem.rss
-                      , starttime: starttime
-                      });
-});
-
-fu.get("/part", function (req, res) {
-  var id = qs.parse(url.parse(req.url).query).id;
-  var session;
-  if (id && sessions[id]) {
-    session = sessions[id];
-    session.destroy();
-  }
-  res.simpleJSON(200, { rss: mem.rss });
-});
-
-fu.get("/recv", function (req, res) {
-  if (!qs.parse(url.parse(req.url).query).since) {
-    res.simpleJSON(400, { error: "Must supply since parameter" });
-    return;
-  }
-  var id = qs.parse(url.parse(req.url).query).id;
+  var id = params.id;
   var session;
   if (id && sessions[id]) {
     session = sessions[id];
     session.poke();
   }
 
-  var since = parseInt(qs.parse(url.parse(req.url).query).since, 10);
+  var since = parseInt(params.since, 10);
 
   channel.query(since, function (messages) {
     if (session) session.poke();
-    res.simpleJSON(200, { messages: messages, rss: mem.rss });
+    return cb(null, { messages: messages, rss: mem.rss });
   });
-});
+};
 
-fu.get("/send", function (req, res) {
-  var id = qs.parse(url.parse(req.url).query).id;
-  var text = qs.parse(url.parse(req.url).query).text;
+exports.send = function(params, cb) {
+  var id = params.id;
+  var text = params.text;
 
   var session = sessions[id];
   if (!session || !text) {
@@ -205,5 +179,16 @@ fu.get("/send", function (req, res) {
   session.poke();
 
   channel.appendMessage(session.nick, "msg", text);
-  res.simpleJSON(200, { rss: mem.rss });
-});
+
+  cb(null, { rss: mem.rss });
+};
+
+exports.part = function(params, cb) {
+  var id = params.id;
+  var session;
+  if (id && sessions[id]) {
+    session = sessions[id];
+    session.destroy();
+  }
+  return cb(null, { rss: mem.rss });
+};

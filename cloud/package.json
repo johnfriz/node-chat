@@ -1,0 +1,11 @@
+{
+  "name": "fh-app",
+  "version": "0.1.0",
+  "dependencies" : {
+    "fh-webapp" : "*",
+    "fh-api" : "*",
+    "express" : "3.3.4",
+    "fh-connect": "1.8.6",
+    "connect": "*"
+  }
+}
