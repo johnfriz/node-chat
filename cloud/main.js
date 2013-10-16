@@ -9,7 +9,12 @@ exports.who = function(params, cb) {
 };
 
 exports.recv = function(params, cb) {
-  return chat.recv(params, cb);
+  console.log('recv from ', params.__fh.cuid);
+  
+  chat.recv(params, function(err, res) {
+    console.log('recv response for ', params.__fh.cuid, ' : = ', res);
+    cb(err, res);
+  });
 };
 
 exports.send = function(params, cb) {
