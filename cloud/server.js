@@ -1,6 +1,6 @@
 var url = require("url"),
     qs = require("querystring"),
-    chat = require("./chat.js");
+    chat = require("chat.js");
 
 exports.who = function(req, res) {
   chat.who({}, function(err, data) {
